@@ -770,6 +770,8 @@ if(OLLAMA_HAVE_LLAMA_SERVER)
             set(_cuda_args)
             ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_ARCHITECTURES)
             ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_FLAGS)
+            ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_COMPILER)
+            ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_HOST_COMPILER)
             ollama_append_cuda_toolkit_args(_cuda_args ${_backend})
             ollama_add_llama_server_build(${_backend}
                 PRESET ${_cuda_preset}
@@ -782,6 +784,8 @@ if(OLLAMA_HAVE_LLAMA_SERVER)
             set(_cuda_args)
             ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_ARCHITECTURES)
             ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_FLAGS)
+            ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_COMPILER)
+            ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_HOST_COMPILER)
             ollama_append_cuda_toolkit_args(_cuda_args ${_backend})
             ollama_add_llama_server_build(${_backend}
                 PRESET ${_cuda_preset}
@@ -830,6 +834,8 @@ if(OLLAMA_HAVE_LLAMA_SERVER)
             set(_cuda_args)
             ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_ARCHITECTURES)
             ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_FLAGS)
+            ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_COMPILER)
+            ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_HOST_COMPILER)
             ollama_add_llama_server_build(${_backend}
                 PRESET ${_cuda_preset}
                 RUNNER_DIR ${_backend}
@@ -845,6 +851,8 @@ if(OLLAMA_HAVE_LLAMA_SERVER)
             set(_cuda_args)
             ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_ARCHITECTURES)
             ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_FLAGS)
+            ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_COMPILER)
+            ollama_append_cache_arg_if_set(_cuda_args CMAKE_CUDA_HOST_COMPILER)
             ollama_add_llama_server_build(${_backend}
                 PRESET ${_cuda_preset}
                 RUNNER_DIR ${_backend}
