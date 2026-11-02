@@ -25,10 +25,33 @@ OLLAMA_VERSION := $(shell debian/get-version)
 BUILDDIR := build
 OLLAMA_CUDA_BACKENDS ?= cuda_v13
 
+# CUDA 13.x nvcc supports host GCC <= 15. Debian default is often newer (e.g. 16).
+# Prefer an installed g++-15/g++-14 as the CUDA host compiler when needed.
+# Override with CMAKE_CUDA_HOST_COMPILER=/path/to/g++.
+ifeq ($(origin CMAKE_CUDA_HOST_COMPILER),undefined)
+ifneq ($(strip $(OLLAMA_CUDA_BACKENDS)),)
+_gcc_maj := $(shell $(or $(CC),gcc) -dumpversion 2>/dev/null | cut -d. -f1)
+ifeq ($(shell [ -n "$(_gcc_maj)" ] && [ "$(_gcc_maj)" -gt 15 ] && echo yes),yes)
+ifneq ($(wildcard /usr/bin/g++-15),)
+CMAKE_CUDA_HOST_COMPILER := /usr/bin/g++-15
+else ifneq ($(wildcard /usr/bin/g++-14),)
+CMAKE_CUDA_HOST_COMPILER := /usr/bin/g++-14
+endif
+endif
+endif
+endif
+ifneq ($(CMAKE_CUDA_HOST_COMPILER),)
+export CMAKE_CUDA_HOST_COMPILER
+export CUDAHOSTCXX := $(CMAKE_CUDA_HOST_COMPILER)
+endif
+
 # Default "all" = every arch CMake/CUDA knows (override with OLLAMA_CUDA_ARCHITECTURES).
 # Optional -D flags from env (build-native.sh sets OLLAMA_CMAKE_EXTRA).
 OLLAMA_CUDA_ARCHITECTURES ?= all
 CMAKE_EXTRA := -DCMAKE_CUDA_ARCHITECTURES="$(OLLAMA_CUDA_ARCHITECTURES)" $(OLLAMA_CMAKE_EXTRA)
+ifneq ($(CMAKE_CUDA_HOST_COMPILER),)
+CMAKE_EXTRA += -DCMAKE_CUDA_HOST_COMPILER="$(CMAKE_CUDA_HOST_COMPILER)"
+endif
 
 %:
 	dh $@ --buildsystem=cmake --builddirectory=$(BUILDDIR)

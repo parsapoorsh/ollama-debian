@@ -35,6 +35,16 @@ sudo apt install cuda-nvcc-13-3 libcublas-dev-13-3
 # gets installed into /usr/local/cuda/bin/nvcc
 ```
 
+CUDA 13.x `nvcc` only accepts host GCC ≤ 15. On hosts whose default `gcc` is
+newer (Debian unstable often ships 16), install a supported side-by-side
+compiler; `debian/rules` picks it automatically:
+
+```
+sudo apt install g++-15
+# or: g++-14
+# override: CMAKE_CUDA_HOST_COMPILER=/usr/bin/g++-15
+```
+
 Also needs network (Go modules + pinned llama.cpp).
 
 ## Build
