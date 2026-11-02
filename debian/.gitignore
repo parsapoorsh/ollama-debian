@@ -1,0 +1,20 @@
+# Generated at build time from git
+changelog
+
+# Build staging
+tmp/
+files
+debhelper-build-stamp
+*.debhelper
+*.debhelper.log
+*.substvars
+ollama/
+ollama-dbgsym/
+ollama-cuda-13/
+ollama-cuda-13-dbgsym/
+
+# Package outputs
+*.deb
+*.ddeb
+*.buildinfo
+*.changes

@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+case "$1" in
+purge)
+	getent passwd ollama >/dev/null && deluser --system ollama 2>/dev/null || true
+	getent group ollama >/dev/null && delgroup --system ollama 2>/dev/null || true
+	;;
+esac
+#DEBHELPER#

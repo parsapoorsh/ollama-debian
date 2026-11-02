@@ -1,0 +1,91 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export DPKG_EXPORT_BUILDFLAGS = 1
+-include /usr/share/dpkg/buildflags.mk
+
+export CGO_ENABLED = 1
+
+# debhelper compat 13+ rewrites HOME to debian/.debhelper/generated/_source/home
+# and clears XDG_* (see Dh_Lib::setup_home_and_xdg_dirs). That tree is removed
+# by dh_clean, so Go would re-download modules every full package build.
+# Pin caches to the real passwd home (not the rewritten HOME).
+_go_home := $(shell getent passwd "$$(id -un)" | cut -d: -f6)
+export GOCACHE ?= $(_go_home)/.cache/go-build
+export GOMODCACHE ?= $(_go_home)/go/pkg/mod
+
+# NVIDIA cuda-nvcc installs here; not on default PATH.
+ifneq ($(wildcard /usr/local/cuda/bin/nvcc),)
+export PATH := /usr/local/cuda/bin:$(PATH)
+export CUDAToolkit_ROOT ?= /usr/local/cuda
+export CUDACXX ?= /usr/local/cuda/bin/nvcc
+endif
+
+OLLAMA_VERSION := $(shell debian/get-version)
+BUILDDIR := build
+OLLAMA_CUDA_BACKENDS ?= cuda_v13
+
+# Default "all" = every arch CMake/CUDA knows (override with OLLAMA_CUDA_ARCHITECTURES).
+# Optional -D flags from env (build-native.sh sets OLLAMA_CMAKE_EXTRA).
+OLLAMA_CUDA_ARCHITECTURES ?= all
+CMAKE_EXTRA := -DCMAKE_CUDA_ARCHITECTURES="$(OLLAMA_CUDA_ARCHITECTURES)" $(OLLAMA_CMAKE_EXTRA)
+
+%:
+	dh $@ --buildsystem=cmake --builddirectory=$(BUILDDIR)
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DFETCHCONTENT_FULLY_DISCONNECTED=OFF \
+		-DOLLAMA_VERSION="$(OLLAMA_VERSION)" \
+		-DOLLAMA_LLAMA_BACKENDS="$(OLLAMA_CUDA_BACKENDS)" \
+		-DOLLAMA_MLX_BACKENDS="" \
+		$(CMAKE_EXTRA)
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	dh_auto_install --destdir=debian/tmp
+	set -e; \
+	for d in debian/tmp/usr/lib/ollama/cuda_*; do \
+		[ -d "$$d" ] || continue; \
+		find "$$d" -maxdepth 1 -type f \( \
+			-name 'libcudart.so*' -o -name 'libcublas.so*' -o \
+			-name 'libcublasLt.so*' -o -name 'libnv*.so*' \
+		\) -delete; \
+	done
+	mkdir -p debian/ollama/usr/bin debian/ollama/usr/lib/ollama \
+		debian/ollama-cuda-13/usr/lib/ollama
+	install -m0755 debian/tmp/usr/bin/ollama debian/ollama/usr/bin/ollama
+	find debian/tmp/usr/lib/ollama -mindepth 1 -maxdepth 1 ! -name 'cuda_*' \
+		-exec cp -a {} debian/ollama/usr/lib/ollama/ \;
+	[ ! -d debian/tmp/usr/lib/ollama/cuda_v13 ] || \
+		cp -a debian/tmp/usr/lib/ollama/cuda_v13 debian/ollama-cuda-13/usr/lib/ollama/
+
+override_dh_install:
+
+override_dh_missing:
+	dh_missing --list-missing
+
+override_dh_shlibdeps:
+	dh_shlibdeps \
+		-l$(CURDIR)/debian/ollama/usr/lib/ollama:$(CURDIR)/debian/ollama-cuda-13/usr/lib/ollama/cuda_v13 \
+		-- --ignore-missing-info
+
+override_dh_dwz:
+
+override_dh_strip:
+	dh_strip -pollama
+	dh_strip -pollama-cuda-13 || true
+
+# Put .deb files in debian/ (default is ..). Paired with -udebian on
+# dpkg-genbuildinfo / dpkg-genchanges via debian/build.sh.
+override_dh_builddeb:
+	dh_builddeb --destdir=debian
+
+override_dh_clean:
+	# If a prior build still wrote into the debhelper fake HOME, those module
+	# files are read-only; chmod so dh_clean can remove debian/.debhelper.
+	[ ! -d debian/.debhelper ] || chmod -R u+w debian/.debhelper
+	dh_clean
+	rm -rf $(BUILDDIR) debian/tmp ollama

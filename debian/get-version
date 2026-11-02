@@ -1,0 +1,25 @@
+#!/bin/sh
+# Version from latest reachable git tag:
+#   on that tag, clean tree  -> X.Y.Z
+#   clean tree, other commit -> X.Y.Z+<12-char commit>
+#   uncommitted changes      -> X.Y.Z+dirty
+# If OLLAMA_DEB_NATIVE=1 (build-native.sh), append +native.
+set -eu
+cd "$(dirname "$0")/.."
+tag=$(git describe --tags --abbrev=0 2>/dev/null) || { echo "0.0.0+notag"; exit 0; }
+ver=${tag#v}
+
+if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+	ver="${ver}+dirty"
+else
+	exact=$(git describe --tags --exact-match HEAD 2>/dev/null || true)
+	if [ "$exact" != "$tag" ]; then
+		ver="${ver}+$(git rev-parse --short=12 HEAD)"
+	fi
+fi
+
+if [ "${OLLAMA_DEB_NATIVE:-}" = 1 ]; then
+	ver="${ver}+native"
+fi
+
+printf '%s\n' "$ver"

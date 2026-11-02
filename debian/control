@@ -1,0 +1,43 @@
+Source: ollama
+Section: utils
+Priority: optional
+Maintainer: Ollama Packaging <ollama-deb@localhost>
+Build-Depends:
+ debhelper-compat (= 13),
+ cmake (>= 3.24),
+ ninja-build,
+ golang-go (>= 2:1.26~) | golang-any,
+ gcc,
+ g++,
+ pkg-config,
+ git,
+ ca-certificates,
+Standards-Version: 4.7.0
+Homepage: https://ollama.com
+Vcs-Git: https://github.com/ollama/ollama.git
+Vcs-Browser: https://github.com/ollama/ollama
+Rules-Requires-Root: no
+
+Package: ollama
+Architecture: any
+Depends: adduser, ${misc:Depends}, ${shlibs:Depends}
+Suggests: ollama-cuda
+Description: run large language models locally
+ CLI, server, and CPU inference runtime. Models are fetched at runtime.
+ Optional NVIDIA support via packages that Provide ollama-cuda.
+
+Package: ollama-cuda-13
+Section: contrib/utils
+Architecture: amd64 arm64
+Depends:
+ ollama (= ${binary:Version}),
+ cuda-cudart-13-3 | cuda-cudart-13-2 | cuda-cudart-13-1,
+ libcublas-13-3 | libcublas-13-2 | libcublas-13-1,
+ libcuda1 | libcuda.so.1,
+ ${misc:Depends},
+ ${shlibs:Depends},
+Provides: ollama-cuda
+Description: CUDA 13 backend for Ollama
+ GGML CUDA 13 modules in /usr/lib/ollama/cuda_v13.
+ .
+ Runtime libraries come from NVIDIA's CUDA apt repo

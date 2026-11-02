@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+case "$1" in
+configure)
+	if ! getent passwd ollama >/dev/null; then
+		adduser --system --group --home /usr/share/ollama \
+			--shell /usr/sbin/nologin --gecos "Ollama service account" ollama
+	fi
+	getent group render >/dev/null && usermod -a -G render ollama || true
+	getent group video >/dev/null && usermod -a -G video ollama || true
+	[ -d /usr/share/ollama ] && chown ollama:ollama /usr/share/ollama || true
+	;;
+esac
+#DEBHELPER#

@@ -1,0 +1,12 @@
+#!/bin/sh
+# Write debian/changelog from the current git tag (not checked in).
+set -eu
+cd "$(dirname "$0")/.."
+ver=$(debian/get-version)
+cat >debian/changelog <<EOF
+ollama (${ver}-1) UNRELEASED; urgency=medium
+
+  * Package from git (${ver}).
+
+ -- ${DEBFULLNAME:-Ollama Packaging} <${DEBEMAIL:-ollama-deb@localhost}>  $(date -R)
+EOF
